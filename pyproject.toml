@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grail-vla"
+version = "0.1.0.dev0"
+description = "Real-time inference for robot foundation models, on the chips inside robots."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [{ name = "NiLabs", email = "hello@nilabs.dev" }]
+keywords = ["robotics", "vla", "inference", "edge-ai", "jetson", "lerobot"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# The runner and stats have no dependencies. Model loading needs PyTorch and
+# LeRobot, installed per platform (Jetson uses NVIDIA's PyTorch wheels).
+dependencies = []
+
+[project.optional-dependencies]
+lerobot = ["lerobot[pi]>=0.7"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+grail = "grail.cli:main"
+
+[project.urls]
+Homepage = "https://www.nilabs.dev"
+Repository = "https://github.com/NiLabs-Org/grail"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

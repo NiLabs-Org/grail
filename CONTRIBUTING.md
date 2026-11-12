@@ -4,9 +4,9 @@ Grail is early. The most useful contributions right now are measurements.
 
 ## Benchmark results
 
-If you run the [baseline script](benchmarks/baseline/) on hardware we have not
-covered, open an issue with the **Benchmark result** template and attach the
-JSON it writes. Include the power mode and clock settings; numbers without them
+If you run `grail bench` or `grail compare` on hardware we have not covered,
+open an issue with the **Benchmark result** template and attach the JSON it
+writes. Include the power mode and clock settings; numbers without them
 cannot be compared.
 
 ## Bugs
@@ -16,10 +16,11 @@ full output, and your hardware, OS, CUDA/JetPack, PyTorch and LeRobot versions.
 
 ## Pull requests
 
+- Run `pytest` before opening a pull request; CI runs it on Python 3.10 and 3.12.
 - Open an issue first for anything larger than a small fix, so we can agree on
   the approach before you spend time on it.
 - Any change that claims a speedup must include before-and-after numbers from
-  the benchmark scripts on the same hardware, and must not reduce task success.
+  `grail compare` on the same hardware, and must not reduce task success.
 - Keep pull requests focused on one change.
 
 ## License

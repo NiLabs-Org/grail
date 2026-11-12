@@ -2,8 +2,8 @@
 
 Real-time inference for robot foundation models, on the chips inside robots.
 
-> **Pre-release.** Nothing here is ready to use yet. The first thing to land is a
-> reproducible baseline benchmark; watch the repo to see it.
+> **Pre-alpha.** The measurement harness and async runner work and are tested;
+> the first benchmark has not been published yet.
 
 ## Why
 
@@ -22,37 +22,62 @@ t_max = k / f
 
 on every call, not on average. At one action and 30 Hz that is 33 ms.
 
-## Goals
+## What is here
 
-- **Built for the robot workload:** batch size 1, fixed shapes, worst-case latency.
-- **Optimized per stage:** vision encoder, language backbone and action head.
-- **Asynchronous by default:** the robot keeps moving while the next chunk computes.
-- **Any chip:** not only NVIDIA.
-- **Task success, always:** every speed or power number is reported next to the
-  task success of the original model. A faster model that stops completing the
-  task does not count.
+| | |
+|---|---|
+| `grail bench` | Latency (p50 / p99 / max), sustainable control rate, power, energy per call, peak memory, and a per-stage split for a LeRobot policy. |
+| `grail compare` | The checkpoint as published vs. the same checkpoint with Grail options: speedup, energy, and **action drift** (same inputs, same diffusion noise). |
+| `grail async` | Runs the model through `ChunkRunner` at a fixed control rate and counts deadline misses. |
+| `grail.ChunkRunner` | Executes the current action chunk while the next one is computed, drops actions that went stale during inference, and falls back (hold, slow down, stop) instead of blocking when a deadline is missed. Model-agnostic, pure Python. |
+
+Options that `compare` can apply: `--denoise-steps`, `--quantize int8wo`,
+`--dtype`, `--compile` / `--no-compile`, `--compile-mode`.
+
+The baseline is always the checkpoint **as published**, with whatever precision
+and compile settings its own config sets. For `lerobot/pi0_libero_finetuned_v044`
+that is already bf16 with `torch.compile`, so those are not counted as Grail wins.
+
+## Quick start
+
+```bash
+git clone https://github.com/NiLabs-Org/grail && cd grail
+pip install -e ".[lerobot]"                 # not on PyPI yet; LeRobot needs Python 3.12
+export HF_TOKEN=hf_...                       # pi0 uses the gated PaliGemma tokenizer
+grail bench   --control-hz 20
+grail compare --denoise-steps 5
+grail async   --control-hz 50
+```
+
+On a fresh NVIDIA Brev L4 instance, [`scripts/brev-l4.sh`](scripts/brev-l4.sh)
+installs everything and runs the full first benchmark.
 
 ## First target
 
 | | |
 |---|---|
-| Model | π0, via LeRobot ([`lerobot/pi0_libero_finetuned_v044`](https://huggingface.co/lerobot/pi0_libero_finetuned_v044)) |
-| Hardware | NVIDIA Jetson AGX Orin 64GB |
-| Baseline | Stock PyTorch through LeRobot |
+| Model | π0 via LeRobot ([`lerobot/pi0_libero_finetuned_v044`](https://huggingface.co/lerobot/pi0_libero_finetuned_v044)) |
+| Development hardware | NVIDIA L4 (24 GB, 72 W) on Brev |
+| Next | The same benchmark on Jetson-class robot hardware |
 | Task success | LIBERO simulation suites |
-| Done when | A clear speedup or power reduction, task success within noise of the baseline, reproducible from this repo |
+| Done when | A clear speedup or energy reduction over the published checkpoint, task success within noise of it, reproducible from this repo |
+
+Action drift is a fast filter, not proof. An optimization counts only when task
+success in LIBERO (or on the robot) holds.
 
 ## Benchmarks
 
-[`benchmarks/`](benchmarks/) holds the methodology and scripts. The
-[baseline script](benchmarks/baseline/) measures latency percentiles, the
-control rate the model can sustain, power and energy per call for the
-unmodified model.
+See [`benchmarks/`](benchmarks/) for the methodology.
 
-## Contributing
+## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Benchmark results from hardware we do
-not have are especially welcome.
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+The tests cover everything that runs without a GPU: the runner, statistics,
+power parsing, drift and stage timing. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
